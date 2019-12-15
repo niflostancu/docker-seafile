@@ -3,14 +3,13 @@ services:
   seafile:
     image: "niflostancu/seafile"
     ports:
-      - "8000:8000"
-      - "8082:8082"
+      - "8000:80"
     environment:
       SEAFILE_INIT_DEBUG: "1"
       SEAFILE_SERVER_NAME: "Test Seafile"
-      SEAFILE_SERVER_IP: 'seafile.localhost'
+      SEAFILE_SERVER_IP: '127.0.0.1'
       SEAFILE_SERVER_URL: 'http://localhost:8000'
-      SEAFHTTP_URL: 'http://localhost:8082'
+      SEAFHTTP_URL: 'http://localhost:8000/seafhttp'
       DB_TYPE: mysql
       DB_HOST: mysql
       DB_PORT: "3306"

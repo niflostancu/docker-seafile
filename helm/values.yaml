@@ -70,16 +70,10 @@ readinessProbe:
   successThreshold: 1
   failureThreshold: 3
 
-# settings for the web ui / file server
-seahub:
-  service:
-    type: ClusterIP
-    port: 8000
-
-seafhttp:
-  service:
-    type: ClusterIP
-    port: 8082
+# service settings
+service:
+  type: ClusterIP
+  port: 80
 
 ingress:
   enabled: false

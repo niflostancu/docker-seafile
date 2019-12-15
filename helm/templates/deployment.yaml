@@ -86,18 +86,13 @@ spec:
 {{ toYaml .Values.extraVolumeMounts | indent 10 }}
 {{- end }}
           ports:
-            - name: seahub
-              containerPort: 8000
-              hostPort: 8000
-              protocol: TCP
-            - name: seafhttp
-              containerPort: 8082
-              hostPort: 8082
+            - name: http
+              containerPort: 80
               protocol: TCP
           livenessProbe:
             httpGet:
               path: {{ .Values.livenessProbe.path }}
-              port: seahub
+              port: http
             timeoutSeconds: {{ default 10 .Values.livenessProbe.timeoutSeconds }}
             initialDelaySeconds: {{ default 60 .Values.livenessProbe.timeoutSeconds }}
             periodSeconds: {{ default 30 .Values.livenessProbe.periodSeconds }}
@@ -106,7 +101,7 @@ spec:
           readinessProbe:
             httpGet:
               path: {{ .Values.readinessProbe.path }}
-              port: seahub
+              port: http
             timeoutSeconds: {{ default 10 .Values.readinessProbe.timeoutSeconds }}
             initialDelaySeconds: {{ default 30 .Values.readinessProbe.timeoutSeconds }}
             periodSeconds: {{ default 15 .Values.readinessProbe.periodSeconds }}

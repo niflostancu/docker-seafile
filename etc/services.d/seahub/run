@@ -41,5 +41,5 @@ exec s6-envuidgid seafile "$gunicorn" \
     -c "${REAL_CONF_DIR}/gunicorn.conf" \
     --error-logfile - --log-file - \
     seahub.wsgi:application \
-    -b "0.0.0.0:8000" --preload
+    -b "127.0.0.1:8000" --preload
 

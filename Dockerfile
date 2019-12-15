@@ -10,7 +10,7 @@ RUN apk --update --no-cache add \
     bash openssl python py-setuptools py-imaging sqlite \
     libevent util-linux glib jansson libarchive \
     mariadb-client mariadb-connector-c postgresql-libs py-pillow \
-    libxml2 libxslt su-exec shadow
+    nginx libxml2 libxslt su-exec shadow
 
 RUN apk add --virtual .build_dep \
     curl-dev libevent-dev glib-dev util-linux-dev intltool \
