@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv bash
+# Runs some preliminary checks and initializes the config / database before
+# starting the main services.
+#
+
+# 1. Check permissions for Seafile's home directory
+chown seafile:seafile "$SEAFILE_DATA_DIR"
+
+if [ "$1" = "-R" ]; then
+    chown seafile:seafile "$SEAFILE_DATA_DIR" -R
+fi
+
+# 2. Run the initialization / upgrade script
+cd /opt/seafile/container-scripts/
+s6-envuidgid seafile ./seafile-init.py
+

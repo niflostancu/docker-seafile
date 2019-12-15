@@ -1,0 +1,8 @@
+# Utility libraries
+mysqlclient
+click
+termcolor
+prettytable
+colorlog
+Jinja2
+

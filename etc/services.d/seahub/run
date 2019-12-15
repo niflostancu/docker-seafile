@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# initialize the environment
+source /etc/profile.d/python-local.sh   
+
+set -e
+
+if [[ -z "$LANG" ]]; then
+    echo "LANG is not set in ENV, set to en_US.UTF-8"
+    export LANG='en_US.UTF-8'
+fi
+if [[ -z "$LC_ALL" ]]; then
+    echo "LC_ALL is not set in ENV, set to en_US.UTF-8"
+    export LC_ALL='en_US.UTF-8'
+fi
+
+SEAFILE_INSTALL_DIR=/opt/seafile
+#export CCNET_CONF_DIR=${SEAFILE_INSTALL_DIR}/ccnet
+#export SEAFILE_CENTRAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
+SEAFILE_SERVER_DIR=${SEAFILE_INSTALL_DIR}/seafile-server
+manage_py=${SEAFILE_SERVER_DIR}/seahub/manage.py
+
+# those seafile path names are really messed up
+REAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
+export CCNET_CONF_DIR=${SEAFILE_INSTALL_DIR}/ccnet  # yep, they're swapped
+export SEAFILE_CENTRAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
+export SEAFILE_CONF_DIR=${SEAFILE_INSTALL_DIR}/seafile-data
+export SEAHUB_LOG_DIR="${SEAFILE_SERVER_DIR}/seahub/"
+source "/etc/profile.d/python-local.sh"
+#gunicorn=${SEAFILE_SERVER_DIR}/seahub/thirdpart/bin/gunicorn
+gunicorn=gunicorn
+
+s6-envuidgid seafile mkdir -p "/opt/seafile/pids"
+cd "${SEAFILE_SERVER_DIR}/seahub/"
+
+sed -i 's/^daemon\s*=.*/daemon = False/' "${REAL_CONF_DIR}/gunicorn.conf"
+cat ${REAL_CONF_DIR}/ccnet.conf
+
+echo "Running Seahub in gunicorn mode..."
+exec s6-envuidgid seafile "$gunicorn" \
+    -c "${REAL_CONF_DIR}/gunicorn.conf" \
+    --error-logfile - --log-file - \
+    seahub.wsgi:application \
+    -b "0.0.0.0:8000" --preload
+

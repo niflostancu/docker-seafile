@@ -1,0 +1,34 @@
+version: '3'
+services:
+  seafile:
+    image: "niflostancu/seafile"
+    ports:
+      - "8000:8000"
+      - "8082:8082"
+    environment:
+      SEAFILE_SERVER_ROOT: 'http://localhost:8082'
+      DB_TYPE: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: seafile
+      DB_PASS: "seafile_test_dev123"
+      DB_EXISTING: "0"
+      DB_ROOT_PASS: "seafile_test_dev123"
+  mysql:
+    image: "mysql"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: 'seafile'
+      MYSQL_USER: 'seafile'
+      MYSQL_PASSWORD: 'seafile_test_dev123'
+      MYSQL_ROOT_PASSWORD: 'seafile_test_dev123'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+
+

@@ -8,15 +8,38 @@ set -x
 ln -s /etc/profile.d/color_prompt /etc/profile.d/color_prompt.sh
 PATH="${PATH}:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 
-# Destination dir for the Seafile installation
-SEAFILE_HOME=${SEAFILE_HOME:-/home/seafile}
+# Directory to install the scripts / misc files to
+# NOTE: Will emulate the official seafile directory layout and symlinks will be
+# created to the actual docker volume when data persistence is required.
+SEAFILE_DIR=${SEAFILE_DIR:-/opt/seafile}
 
 # Seafile Version
 SEAFILE_VERSION="${SEAFILE_VERSION:-unknown}"
 
-[ -z $LIBEVHTP_VERSION  ] && LIBEVHTP_VERSION="1.2.18"
-#[ -z $LIBEVHTP_VERSION  ] && LIBEVHTP_VERSION="18c649203f009ef1d77d6f8301eba09af3777adf"
-[ -z $LIBSEARPC_VERSION ] && LIBSEARPC_VERSION="3.1-latest"
+# doesn't work with the official one yet...
+# https://github.com/haiwen/seafile-server/issues/67
+LIBEVHTP_OFFICIAL=0
+
+LIBEVHTP_REPO=https://github.com/haiwen/libevhtp
+LIBEVHTP_VERSION="18c649203f009ef1d77d6f8301eba09af3777adf"
+
+if [[ "$LIBEVHTP_OFFICIAL" = "1" ]]; then
+    LIBEVHTP_REPO=https://github.com/criticalstack/libevhtp
+    LIBEVHTP_VERSION="1.2.18"
+fi
+
+LIBSEARPC_VERSION="3.1-latest"
+
+# Install preparations
+addgroup -g "$SEAFILE_UID" seafile
+adduser -D -s /bin/bash -g "Seafile Admin" -G seafile -h "/home/seafile" -u "$SEAFILE_UID" seafile
+mkdir -p /home/seafile
+chown seafile:seafile /home/seafile
+chmod 700 /home/seafile
+
+# Create the required dir structure
+mkdir -p "${SEAFILE_DATA_DIR}"
+mkdir -p ${SEAFILE_DIR}/seafile-server
 
 # Use a temporary dir for all our work
 WORK_DIR="/tmp/seafile"
@@ -28,21 +51,31 @@ PYTHON_PACKAGES_DIR=`python -c "from distutils.sysconfig import get_python_lib; 
 ## Download & compile Seafile & components
 ## ==============================================================
 
+# script requirements
+pip install -r /tmp/requirements-utils.txt
+
 # Download & compile libevhtp
 
-#wget -nv https://github.com/ellzey/libevhtp/archive/${LIBEVHTP_VERSION}.tar.gz -O- | tar xzf -
-wget -nv https://github.com/criticalstack/libevhtp/archive/${LIBEVHTP_VERSION}.tar.gz -O- | tar xzf -
-#https://github.com/haiwen/libevhtp/archive/18c649203f009ef1d77d6f8301eba09af3777adf.zip
+wget -nv "${LIBEVHTP_REPO}/archive/${LIBEVHTP_VERSION}.tar.gz" -O- | tar xzf -
 cd libevhtp-${LIBEVHTP_VERSION}/
 
-ls -l /tmp/patches/901-openssl-thread.patch
-patch -p1 < /tmp/patches/901-openssl-thread.patch
+# official libevhtp requires a patch
+if [[ "$LIBEVHTP_OFFICIAL" = "1" ]]; then
+    patch -p1 < /tmp/patches/901-openssl-thread.patch
+fi
 
-cmake .  ## -DEVHTP_DISABLE_SSL=ON -DEVHTP_BUILD_SHARED=ON .
+cmake -DEVHTP_DISABLE_SSL=ON -DEVHTP_BUILD_SHARED=ON .
 make && make install
-sed -i 's,^\(include\|lib\)dir=,\0/usr/local/\1,' "/usr/local/lib/pkgconfig/evhtp.pc"
-# WORKAROUND: fix pkgconfig paths (make installs them wrong)
-cat "/usr/local/lib/pkgconfig/evhtp.pc"
+
+if [[ "$LIBEVHTP_OFFICIAL" = "1" ]]; then
+    sed -i 's,^\(include\|lib\)dir=,\0/usr/local/\1,' "/usr/local/lib/pkgconfig/evhtp.pc"
+    # WORKAROUND: fix pkgconfig paths (make installs them wrong)
+    cat "/usr/local/lib/pkgconfig/evhtp.pc"
+else
+    ls -l
+    ls -l oniguruma/
+    cp oniguruma/onigposix.h /usr/include/
+fi
 
 # Download all Seafile components
 
@@ -60,9 +93,8 @@ cd $WORK_DIR/seahub-${SEAFILE_VERSION}-server/
 sed -i "s/^SEAFILE_VERSION.*$/SEAFILE_VERSION = '${SEAFILE_VERSION}'/" seahub/settings.py
 pip install -r requirements.txt
 
-#mv $WORK_DIR/seahub-${SEAFILE_VERSION}-server/ /usr/local/share/seahub
-mkdir -p /usr/local/share/seafile
-tar czf /usr/local/share/seafile/seahub.tgz -C $WORK_DIR/seahub-${SEAFILE_VERSION}-server/ ./
+# copy seafile hub files to the install dir
+cp -ar $WORK_DIR/seahub-${SEAFILE_VERSION}-server/ "${SEAFILE_DIR}/seafile-server/seahub/"
 
 # Build and install libSeaRPC
 cd $WORK_DIR/libsearpc-${LIBSEARPC_VERSION}/
@@ -79,10 +111,9 @@ cd $WORK_DIR/ccnet-server-${SEAFILE_VERSION}-server/
 make && make install
 
 # Build and install Seafile-Server
-
-# As a First step we need to patch it
 cd $WORK_DIR/seafile-server-${SEAFILE_VERSION}-server/
 
+# plenty of patches
 echo "diff --git a/tools/seafile-admin b/tools/seafile-admin
 index 5e3658b..6cfeafd 100755
 --- a/tools/seafile-admin
@@ -101,24 +132,26 @@ index 5e3658b..6cfeafd 100755
      del django
 
 " | patch -p1
+# patch -p1 < /tmp/patches/001-seafile-server.patch
 
-patch -p1 < /tmp/patches/001-seafile-server.patch
-patch -p1 < /tmp/patches/010-libevhtp-linking.patch
-patch -p1 < /tmp/patches/020-recent-libevhtp.patch
-patch -p1 < /tmp/patches/030-newer-libevhtp.patch
+# official libevhtp requires seafile-server patching
+if [[ "$LIBEVHTP_OFFICIAL" = "1" ]]; then
+    patch -p1 < /tmp/patches/010-libevhtp-linking.patch
+    patch -p1 < /tmp/patches/020-recent-libevhtp.patch
+    patch -p1 < /tmp/patches/030-newer-libevhtp.patch
+fi
 
 ./autogen.sh
 ./configure --with-mysql --with-postgresql --enable-python
 make && make install
 
-# Copy some useful scripts to /usr/local/bin
-
-#mkdir -p /usr/local/bin
-cp scripts/seaf-fsck.sh /usr/local/bin/seafile-fsck
-cp scripts/seaf-gc.sh /usr/local/bin/seafile-gc
 # Also copy scripts to save them
-#mkdir -p /usr/local/share/seafile/
-mv scripts /usr/local/share/seafile/
+cp -r scripts/* "${SEAFILE_DIR}/seafile-server/"
+mkdir -p "${SEAFILE_DIR}/seafile-server/runtime/"
+mv "${SEAFILE_DIR}/seafile-server/seahub.conf" "${SEAFILE_DIR}/seafile-server/runtime/"
+mkdir -p "${SEAFILE_DIR}/seafile-server/seafile/docs"
+cp -rf "./doc/"seafile-tutorial* "${SEAFILE_DIR}/seafile-server/seafile/docs/"
+chmod 755 "${SEAFILE_DIR}/seafile-server/" -R
 
 cd $WORK_DIR/seafobj-${SEAFILE_VERSION}-server/
 mv seafobj ${PYTHON_PACKAGES_DIR}/
@@ -126,29 +159,21 @@ mv seafobj ${PYTHON_PACKAGES_DIR}/
 cd $WORK_DIR/seafdav-${SEAFILE_VERSION}-server/
 mv wsgidav ${PYTHON_PACKAGES_DIR}/
 
-echo "export PYTHONPATH=${PYTHON_PACKAGES_DIR}:/usr/local/lib/python2.7/site-packages/:${SEAFILE_HOME}/seafile-server/seahub/thirdpart" >> /etc/profile.d/python-local.sh
+echo "export PYTHONPATH=${PYTHON_PACKAGES_DIR}:/usr/local/lib/python2.7/site-packages/:${SEAFILE_DIR}/seafile-server/seahub/thirdpart" >> /etc/profile.d/python-local.sh
 
-ldconfig || true
-
+ldconfig || true  # ldconfig exits with nonzero
 echo "Seafile-Server has been built successfully!"
 
-# Install preparations
-
-addgroup -g "$SEAFILE_UID" seafile
-adduser -D -s /bin/sh -g "Seafile Server" -G seafile -h "$SEAFILE_HOME" -u "$SEAFILE_UID" seafile
-
-# Create seafile-server dir 
-su - -c "mkdir ${SEAFILE_HOME}/seafile-server" seafile
-
-# Store seafile version
-# Store seafile version and if tis is edge image
-mkdir -p /var/lib/seafile
-echo -n "$SEAFILE_VERSION" > /var/lib/seafile/version
-
-echo "The seafile user has been created and configured successfully!"
+# Store seafile version, create symlinks to the actual data dir
+echo -n "$SEAFILE_VERSION" > "${SEAFILE_DIR}/version"
+chmod 755 "${SEAFILE_DIR}" -R
+# create symlinks to user data dirs
+symlinks=(conf ccnet seafile-data seahub-data)
+for name in "${symlinks[@]}"; do
+    ln -sf "${SEAFILE_DATA_DIR}/$name" "$SEAFILE_DIR/$name"
+done
 
 echo "Cleaning up temporary files..."
-
 # Finally, cleanup
 cd /
 apk del --purge .build_dep

@@ -3,14 +3,13 @@ FROM niflostancu/server-base
 MAINTAINER Florin Stancu <niflostancu@gmail.com>
 
 ENV SEAFILE_UID=1000 \
-    SEAFILE_HOME="/home/seafile" \
     SEAFILE_DATA_DIR="/var/lib/seafile" \
     SEAFILE_VERSION="7.0.0"
 
 RUN apk --update --no-cache add \
     bash openssl python py-setuptools py-imaging sqlite \
     libevent util-linux glib jansson libarchive \
-    mariadb-client postgresql-libs py-pillow \
+    mariadb-client mariadb-connector-c postgresql-libs py-pillow \
     libxml2 libxslt su-exec shadow
 
 RUN apk add --virtual .build_dep \
@@ -22,6 +21,7 @@ RUN apk add --virtual .build_dep \
     oniguruma-dev
 
 # Copy build script and patches
+COPY requirements-utils.txt /tmp/
 COPY build.sh /tmp/
 COPY patches/ /tmp/patches/
 # Execute build scripts
@@ -30,6 +30,6 @@ RUN /tmp/build.sh
 EXPOSE 8000 8082
 
 # Scripts & Configs
-ADD scripts/ /usr/local/bin/
+ADD seafile-scripts/ /opt/seafile/container-scripts/
 ADD etc/ /etc/
 

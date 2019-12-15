@@ -1,0 +1,14 @@
+#!/bin/bash
+
+SEAFILE_INSTALL_DIR=/opt/seafile
+
+CCNET_ARGS=(
+	-c "$SEAFILE_INSTALL_DIR/ccnet"
+	-F "$SEAFILE_INSTALL_DIR/conf"
+	-f -
+)
+
+cd "${SEAFILE_INSTALL_DIR}/seafile-server"
+echo "Starting ccnet-server..."
+exec s6-envuidgid seafile /usr/local/bin/ccnet-server "${CCNET_ARGS[@]}"
+
