@@ -32,7 +32,7 @@ def init_seafile_server():
     loginfo('Running setup-seafile-mysql.py in auto mode.')
     env = {
         'SERVER_NAME': get_conf('SEAFILE_SERVER_NAME', "Seafile"),
-        'SERVER_IP': get_conf('SEAFILE_SERVER_HOSTNAME', 'seafile.example.com'),
+        'SERVER_IP': get_conf('SEAFILE_SERVER_IP', 'seafile.example.com'),
         'CCNET_DB': get_conf('CCNET_DB', 'seafile_ccnet'),
         'SEAFILE_DB': get_conf('SEAFILE_DB', 'seafile_db'),
         'SEAHUB_DB': get_conf('SEAHUB_DB', 'seafile_hub'),
@@ -69,7 +69,7 @@ def init_seafile_server():
     wait_for_mysql()
     call('{} auto -n seafile'.format(setup_script), env=env)
 
-    seafile_server_root = get_conf('SEAFILE_SERVER_ROOT', 'https://seafile.example.com/seafhttp')
+    seafile_server_root = get_conf('SEAFHTTP_URL', 'https://seafile.example.com/seafhttp')
     with open(join(topdir, 'conf', 'seahub_settings.py'), 'a+') as fp:
         fp.write('\n')
         fp.write("TIME_ZONE = '{time_zone}'".format(time_zone=os.getenv('TZ', default='Etc/UTC')))

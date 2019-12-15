@@ -6,7 +6,11 @@ services:
       - "8000:8000"
       - "8082:8082"
     environment:
-      SEAFILE_SERVER_ROOT: 'http://localhost:8082'
+      SEAFILE_INIT_DEBUG: "1"
+      SEAFILE_SERVER_NAME: "Test Seafile"
+      SEAFILE_SERVER_IP: 'seafile.localhost'
+      SEAFILE_SERVER_URL: 'http://localhost:8000'
+      SEAFHTTP_URL: 'http://localhost:8082'
       DB_TYPE: mysql
       DB_HOST: mysql
       DB_PORT: "3306"

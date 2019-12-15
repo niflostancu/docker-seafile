@@ -7,9 +7,6 @@ if [[ ! -d "$SEAFILE_INSTALL_DIR/conf" ]]; then
     exit 1
 fi
 
-ls -l /opt/seafile/conf/
-ls -l /opt/seafile/ccnet/
-
 export SEAFILE_DEBUG=debug
 
 SEAF_ARGS=(\

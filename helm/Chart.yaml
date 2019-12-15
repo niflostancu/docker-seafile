@@ -1,0 +1,15 @@
+apiVersion: v2
+name: seafile
+description: Seafile - self-hosted file synchronization
+type: application
+
+version: 0.1
+appVersion: 7.0.0
+
+sources:
+  - https://github.com/niflostancu/docker-seafile
+  - https://github.com/niflostancu/k8s-personal-nas
+maintainers:
+  - name: Stancu Florin
+    email: niflostancu@gmail.com
+

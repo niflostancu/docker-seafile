@@ -15,7 +15,7 @@ import colorlog
 import MySQLdb
 
 logger = logging.getLogger('.utils')
-DEBUG_ENABLED = os.environ.get('DEBUG', '').lower() in ('true', '1', 'yes')
+DEBUG_ENABLED = os.environ.get('SEAFILE_INIT_DEBUG', '').lower() in ('true', '1', 'yes')
 
 
 def eprint(*a, **kw):
@@ -46,7 +46,7 @@ def _find_flag(args, *opts, **kw):
 
 def call(*a, **kw):
     dry_run = kw.pop('dry_run', False)
-    quiet = kw.pop('quiet', DEBUG_ENABLED)
+    quiet = kw.pop('quiet', not DEBUG_ENABLED)
     cwd = kw.get('cwd', os.getcwd())
     check_call = kw.pop('check_call', True)
     reduct_args = kw.pop('reduct_args', [])
@@ -59,6 +59,7 @@ def call(*a, **kw):
         logdbg('calling: ' + green(toprint))
         logdbg('cwd:     ' + green(cwd))
     kw.setdefault('shell', True)
+    kw.setdefault("stderr", sys.stdout.fileno())
     if not dry_run:
         if check_call:
             return subprocess.check_call(*a, **kw)

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "seafile.seafhttpService" . }}
+  labels:
+    {{- include "seafile.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.seafhttp.service.type }}
+  ports:
+    - port: {{ .Values.seafhttp.service.port }}
+      targetPort: seafhttp
+      protocol: TCP
+      name: seafhttp
+  selector:
+    {{- include "seafile.selectorLabels" . | nindent 4 }}
+

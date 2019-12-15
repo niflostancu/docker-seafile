@@ -1,0 +1,113 @@
+# Default values for seafile.
+
+replicaCount: 1
+
+image:
+  repository: niflostancu/seafile
+  tag: "7.0.0-r1"
+  pullPolicy: Always
+
+imagePullSecrets: []
+name: ""
+fullname: ""
+
+podSecurityContext: {}
+securityContext: {}
+
+databaseHost: "mysql"
+databasePort: "3306"
+databaseType: "mysql"
+databaseUser: "seafile"
+
+databasePassword: ""
+# alternative for password: use a k8s secret
+databaseSecret: {}
+  # name: "mysql-seafile"
+  # key: "mysql-password"
+
+databaseExists: false
+databaseRootPassword: ""
+# alternative for password: use a k8s secret
+databaseRootSecret: {}
+  # name: "mysql-root"
+  # key: "mysql-password"
+
+seafileServerName: "Seafile"
+seafileHostname: "localhost"
+seafhttpUrl: "http://localhost/seafhttp"
+
+# persist the seafile configuration & data volume
+persistence:
+  enabled: true
+  # existingClaim: seafile
+  # storageClass: "-"
+  accessMode: ReadWriteOnce
+  # subPath: '/'
+  size: 10Gi
+  annotations: {}
+
+extraVolumes: {}
+  # - name: extras
+  #   emptyDir: {}
+extraVolumeMounts: {}
+  # - name: extras
+  #   mountPath: /opt/seafile/extra/
+  #   readOnly: true
+
+livenessProbe:
+  #path: /seafile/
+  timeoutSeconds: 10
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 3
+
+readinessProbe:
+  #path: /seafile/
+  timeoutSeconds: 10
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 3
+
+# settings for the web ui / file server
+seahub:
+  service:
+    type: ClusterIP
+    port: 8000
+
+seafhttp:
+  service:
+    type: ClusterIP
+    port: 8082
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: seafile.local
+      paths: []
+  tls: []
+  #  - secretName: ttrss-tls
+  #    hosts:
+  #      - ttrss.local
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Custom mysql configuration files
+configurationFiles: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+

@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "seafile.fullname" . }}
+  labels:
+    {{- include "seafile.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "seafile.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "seafile.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          {{- if .Values.seafileServerName }}
+            - {name: "SEAFILE_SERVER_NAME", value: {{ .Values.seafileServerName | quote }} }
+          {{- end }}
+          {{- if .Values.seafileHostname }}
+            - {name: "SEAFILE_SERVER_IP", value: {{ .Values.seafileHostname | quote }} }
+          {{- end }}
+          {{- if .Values.seafhttpUrl }}
+            - {name: "SEAFHTTP_URL", value: {{ .Values.seafhttpUrl | quote }} }
+          {{- end }}
+          {{- if .Values.databaseHost }}
+            - {name: "DB_HOST", value: {{ .Values.databaseHost | quote }} }
+          {{- end }}
+          {{- if .Values.databaseType }}
+            - {name: "DB_TYPE", value: {{ .Values.databaseType | quote }} }
+          {{- end }}
+          {{- if .Values.databasePort }}
+            - {name: "DB_PORT", value: {{ .Values.databasePort | quote }} }
+          {{- end }}
+          {{- if .Values.databaseName }}
+            - {name: "DB_NAME", value: {{ .Values.databaseName | quote }} }
+          {{- end }}
+          {{- if .Values.databaseUser }}
+            - {name: "DB_USER", value: {{ .Values.databaseUser | quote }} }
+          {{- end }}
+            - name: DB_PASS
+              {{- if and (hasKey .Values.databaseSecret "name") (.Values.databaseSecret.name) }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databaseSecret.name | quote }}
+                  key: {{ .Values.databaseSecret.key | quote }}
+              {{- else }}
+              value: {{ default "" .Values.databasePassword | quote }}
+              {{- end }}
+          {{- if .Values.databaseExists }}
+            - {name: "DB_EXISTING", value: {{ .Values.databaseExists | quote }} }
+          {{- end }}
+            - name: DB_ROOT_PASS
+              {{- if and (hasKey .Values.databaseRootSecret "name") (.Values.databaseRootSecret.name) }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.databaseRootSecret.name | quote }}
+                  key: {{ .Values.databaseRootSecret.key | quote }}
+              {{- else }}
+              value: {{ default "" .Values.databaseRootPassword | quote }}
+              {{- end }}
+          {{- if .Values.timezone }}
+            - name: TZ
+              value: {{ .Values.timezone }}
+          {{- end }}
+          volumeMounts:
+          - name: data
+            mountPath: /var/lib/seafile
+            {{- if .Values.persistence.subPath }}
+            subPath: {{ .Values.persistence.subPath }}
+            {{- end }}
+{{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | indent 10 }}
+{{- end }}
+          ports:
+            - name: seahub
+              containerPort: 8000
+              hostPort: 8000
+              protocol: TCP
+            - name: seafhttp
+              containerPort: 8082
+              hostPort: 8082
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: seahub
+            timeoutSeconds: {{ default 10 .Values.livenessProbe.timeoutSeconds }}
+            initialDelaySeconds: {{ default 60 .Values.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{ default 30 .Values.livenessProbe.periodSeconds }}
+            successThreshold: {{ default 1 .Values.livenessProbe.successThreshold }}
+            failureThreshold: {{ default 3 .Values.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: seahub
+            timeoutSeconds: {{ default 10 .Values.readinessProbe.timeoutSeconds }}
+            initialDelaySeconds: {{ default 30 .Values.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{ default 15 .Values.readinessProbe.periodSeconds }}
+            successThreshold: {{ default 1 .Values.readinessProbe.successThreshold }}
+            failureThreshold: {{ default 3 .Values.readinessProbe.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: data
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default (include "seafile.fullname" .) }}
+      {{- else }}
+        emptyDir: {}
+      {{- end -}}
+{{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | indent 6 }}
+{{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
