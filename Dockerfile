@@ -4,7 +4,7 @@ MAINTAINER Florin Stancu <niflostancu@gmail.com>
 
 ENV SEAFILE_UID=1000 \
     SEAFILE_DATA_DIR="/var/lib/seafile" \
-    SEAFILE_VERSION="7.0.0"
+    SEAFILE_VERSION="7.0.5"
 
 RUN apk --update --no-cache add \
     bash openssl python py-setuptools py-imaging sqlite \
