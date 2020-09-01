@@ -1,5 +1,5 @@
 # Seafile server image
-FROM niflostancu/server-base
+FROM niflostancu/server-base:v0.3-alpine3.11
 MAINTAINER Florin Stancu <niflostancu@gmail.com>
 
 ENV SEAFILE_UID=1000 \
@@ -7,7 +7,7 @@ ENV SEAFILE_UID=1000 \
     SEAFILE_VERSION="7.0.5"
 
 RUN apk --update --no-cache add \
-    bash openssl python py-setuptools py-imaging sqlite \
+    bash openssl python py-setuptools py2-pillow sqlite \
     libevent util-linux glib jansson libarchive \
     mariadb-client mariadb-connector-c postgresql-libs py-pillow \
     nginx libxml2 libxslt su-exec shadow

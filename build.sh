@@ -23,6 +23,7 @@ LIBEVHTP_OFFICIAL=0
 LIBEVHTP_REPO=https://github.com/haiwen/libevhtp
 LIBEVHTP_VERSION="18c649203f009ef1d77d6f8301eba09af3777adf"
 
+# TODO: check those patches https://github.com/freebsd/freebsd-ports/tree/master/net-mgmt/seafile-server/files
 if [[ "$LIBEVHTP_OFFICIAL" = "1" ]]; then
     LIBEVHTP_REPO=https://github.com/criticalstack/libevhtp
     LIBEVHTP_VERSION="1.2.18"
