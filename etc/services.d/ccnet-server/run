@@ -5,7 +5,7 @@ SEAFILE_INSTALL_DIR=/opt/seafile
 CCNET_ARGS=(
 	-c "$SEAFILE_INSTALL_DIR/ccnet"
 	-F "$SEAFILE_INSTALL_DIR/conf"
-	-f -
+	# -f -
 )
 
 cd "${SEAFILE_INSTALL_DIR}/seafile-server"

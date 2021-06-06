@@ -13,7 +13,7 @@ SEAF_ARGS=(\
     -c "${SEAFILE_INSTALL_DIR}/ccnet"
 	-F "${SEAFILE_INSTALL_DIR}/conf"
     -d "${SEAFILE_INSTALL_DIR}/seafile-data"
-    -l -
+    # -l -
     -f  # foreground
 )
 
