@@ -1,0 +1,26 @@
+#!/usr/bin/execlineb -P
+with-contenv
+
+define SEAFILE_INSTALL_DIR "/opt/seafile"
+
+foreground {
+    if { s6-test ! -d ${SEAFILE_INSTALL_DIR}/conf }
+    foreground {
+        echo "Seafile configuration directory '${SEAFILE_INSTALL_DIR}/conf' does not exist!"
+    }
+    exit 1
+}
+
+foreground { echo "Starting seafile-server..." }
+cd ${SEAFILE_INSTALL_DIR}/seafile-server
+
+define SEAFILE_RPC_PIPE_PATH "${SEAFILE_INSTALL_DIR}/seafile-server/runtime"
+define SEAFILE_DEBUG "all"
+
+s6-setuidgid seafile /usr/bin/seafile-controller 
+    -c "${SEAFILE_INSTALL_DIR}/ccnet"
+    -F "${SEAFILE_INSTALL_DIR}/conf"
+    -d "${SEAFILE_INSTALL_DIR}/seafile-data"
+    # -l logs
+    -f  # foreground
+

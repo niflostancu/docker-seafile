@@ -1,7 +1,7 @@
 version: '3'
 services:
   seafile:
-    image: "niflostancu/seafile"
+    image: "niflostancu/seafile:v8.0"
     ports:
       - "8000:80"
     environment:

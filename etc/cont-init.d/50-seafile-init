@@ -2,6 +2,7 @@
 # Runs some preliminary checks and initializes the config / database before
 # starting the main services.
 #
+set -e
 
 # 1. Check permissions for Seafile's home directory
 chown seafile:seafile "$SEAFILE_DATA_DIR"
@@ -12,5 +13,16 @@ fi
 
 # 2. Run the initialization / upgrade script
 cd /opt/seafile/container-scripts/
-s6-envuidgid seafile ./seafile-init.py
+s6-setuidgid seafile ./seafile-init.py
+
+# create logs dir, if not exists
+SEAFILE_LOGS_DIR=/var/lib/seafile/logs
+mkdir -p "$SEAFILE_LOGS_DIR"
+chown seafile:seafile "$SEAFILE_LOGS_DIR"
+
+# create symlinks to persist seafile data (if not exists)
+symlinks=(conf ccnet logs seafile-data seahub-data)
+for name in "${symlinks[@]}"; do
+    ln -sf "${SEAFILE_DATA_DIR}/$name" "$SEAFILE_DIR/$name"
+done
 

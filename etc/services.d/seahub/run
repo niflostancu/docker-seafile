@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# initialize the environment
-source /etc/profile.d/python-local.sh   
-
 set -e
 
 if [[ -z "$LANG" ]]; then
@@ -15,31 +12,32 @@ if [[ -z "$LC_ALL" ]]; then
 fi
 
 SEAFILE_INSTALL_DIR=/opt/seafile
-#export CCNET_CONF_DIR=${SEAFILE_INSTALL_DIR}/ccnet
-#export SEAFILE_CENTRAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
 SEAFILE_SERVER_DIR=${SEAFILE_INSTALL_DIR}/seafile-server
-manage_py=${SEAFILE_SERVER_DIR}/seahub/manage.py
-
-# those seafile path names are really messed up
+SEAHUB_DIR=${SEAFILE_SERVER_DIR}/seahub
 REAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
-export CCNET_CONF_DIR=${SEAFILE_INSTALL_DIR}/ccnet  # yep, they're swapped
-export SEAFILE_CENTRAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
-export SEAFILE_CONF_DIR=${SEAFILE_INSTALL_DIR}/seafile-data
-export SEAHUB_LOG_DIR="${SEAFILE_SERVER_DIR}/seahub/"
-source "/etc/profile.d/python-local.sh"
-#gunicorn=${SEAFILE_SERVER_DIR}/seahub/thirdpart/bin/gunicorn
 gunicorn=gunicorn
 
-s6-envuidgid seafile mkdir -p "/opt/seafile/pids"
+# export environment required by seahub
+# Note: those var names are really messed up
+export CCNET_CONF_DIR=${SEAFILE_INSTALL_DIR}/ccnet  # yep, they're swapped
+export SEAFILE_CONF_DIR=${SEAFILE_INSTALL_DIR}/seafile-data
+export SEAFILE_CENTRAL_CONF_DIR=${SEAFILE_INSTALL_DIR}/conf
+export SEAFILE_RPC_PIPE_PATH="${SEAFILE_SERVER_DIR}/runtime"
+export SEAHUB_LOG_DIR="${SEAFILE_SERVER_DIR}/seahub/"
+
+export SEAFILE_UCI_DATA_DIR="${SEAFILE_DATA_DIR}/seahub-data"
+export PYTHONPATH="${SEAHUB_DIR}:${SEAHUB_DIR}/thirdpart:$PYTHONPATH"
+
+# create pids dir if not existing
+s6-setuidgid seafile mkdir -p "/opt/seafile/pids"
 cd "${SEAFILE_SERVER_DIR}/seahub/"
 
-sed -i 's/^daemon\s*=.*/daemon = False/' "${REAL_CONF_DIR}/gunicorn.conf"
-cat ${REAL_CONF_DIR}/ccnet.conf
-
+# make gunicorn run in foreground
 echo "Running Seahub in gunicorn mode..."
-exec s6-envuidgid seafile "$gunicorn" \
-    -c "${REAL_CONF_DIR}/gunicorn.conf" \
+sed -i 's/^daemon\s*=.*/daemon = False/' "${REAL_CONF_DIR}/gunicorn.conf.py"
+
+exec s6-setuidgid seafile "$gunicorn" \
+    -c "${REAL_CONF_DIR}/gunicorn.conf.py" \
     --error-logfile - --log-file - \
-    seahub.wsgi:application \
-    -b "127.0.0.1:8000" --preload
+    seahub.wsgi:application --preload
 

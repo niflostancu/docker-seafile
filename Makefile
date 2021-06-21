@@ -3,7 +3,7 @@
 VERSION=$(shell cat VERSION)
 
 IMAGE_NAME = seafile
-IMAGE_TAGS = $(VERSION) v7.0
+IMAGE_TAGS = $(VERSION) v8.0
 IMAGE_PREFIX = niflostancu/
 FULL_IMAGE_NAME=$(IMAGE_PREFIX)$(IMAGE_NAME)
 
@@ -20,8 +20,11 @@ push:
 	docker push $(FULL_IMAGE_NAME):latest
 	$(foreach TAG,$(IMAGE_TAGS),docker push $(FULL_IMAGE_NAME):$(TAG);)
 
-run:
-	docker-compose up
+compose:
+	docker-compose -f docker-compose.dev.yml up
+
+compose_shell:
+	docker-compose -f docker-compose.dev.yml exec seafile bash
 
 .PHONY: build build_force push test
 

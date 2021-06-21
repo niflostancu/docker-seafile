@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Container init script that checks whether seafile is properly configured and
 runs the install / upgrade scripts if necessary.

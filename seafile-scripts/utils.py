@@ -1,5 +1,7 @@
-from __future__ import print_function
-from ConfigParser import ConfigParser
+#!/usr/bin/env python3
+#coding: UTF-8
+
+from configparser import ConfigParser
 from contextlib import contextmanager
 import os
 import datetime
@@ -12,7 +14,7 @@ import logging
 import logging.config
 import termcolor
 import colorlog
-import MySQLdb
+import pymysql
 
 logger = logging.getLogger('.utils')
 DEBUG_ENABLED = os.environ.get('SEAFILE_INIT_DEBUG', '').lower() in ('true', '1', 'yes')
@@ -46,7 +48,7 @@ def _find_flag(args, *opts, **kw):
 
 def call(*a, **kw):
     dry_run = kw.pop('dry_run', False)
-    quiet = kw.pop('quiet', not DEBUG_ENABLED)
+    quiet = kw.pop('quiet', DEBUG_ENABLED)
     cwd = kw.get('cwd', os.getcwd())
     check_call = kw.pop('check_call', True)
     reduct_args = kw.pop('reduct_args', [])
@@ -59,7 +61,6 @@ def call(*a, **kw):
         logdbg('calling: ' + green(toprint))
         logdbg('cwd:     ' + green(cwd))
     kw.setdefault('shell', True)
-    kw.setdefault("stderr", sys.stdout.fileno())
     if not dry_run:
         if check_call:
             return subprocess.check_call(*a, **kw)
@@ -122,7 +123,6 @@ def setup_colorlog():
     logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(
         logging.WARNING)
 
-
 def setup_logging(level=logging.INFO):
     kw = {
         'format': '[%(asctime)s][%(module)s]: %(message)s',
@@ -135,39 +135,36 @@ def setup_logging(level=logging.INFO):
     logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(
         logging.WARNING)
 
+    
 def get_process_cmd(pid, env=False):
     env = 'e' if env else ''
     try:
         return subprocess.check_output('ps {} -o command {}'.format(env, pid),
-                                       shell=True).strip().splitlines()[1]
+                                       shell=True).decode('utf8').strip().splitlines()[1]
     # except Exception, e:
     #     print(e)
     except:
         return None
 
+
 def get_match_pids(pattern):
     pgrep_output = subprocess.check_output(
         'pgrep -f "{}" || true'.format(pattern),
-        shell=True).strip()
+        shell=True).decode('utf8').strip()
     return [int(pid) for pid in pgrep_output.splitlines()]
-
-def confirm_command_to_run(cmd):
-    if ask_for_confirm('Run the command: {} ?'.format(green(cmd))):
-        call(cmd)
-    else:
-        sys.exit(1)
 
 def git_current_commit():
     return get_command_output('git rev-parse --short HEAD').strip()
 
 def get_command_output(cmd):
     shell = not isinstance(cmd, list)
-    return subprocess.check_output(cmd, shell=shell)
+    return subprocess.check_output(cmd, shell=shell).decode('utf8')
+
 
 def ask_yes_or_no(msg, prompt='', default=None):
     print('\n' + msg + '\n')
     while True:
-        answer = raw_input(prompt + ' [yes/no] ').lower()
+        answer = input(prompt + ' [yes/no] ').lower()
         if not answer:
             continue
 
@@ -198,12 +195,14 @@ def git_commit_time(refspec):
     return int(get_command_output('git log -1 --format="%ct" {}'.format(
         refspec)).strip())
 
+def get_seafile_version():
+    return os.environ['SEAFILE_VERSION']
+
 def get_install_dir():
-    return join('/opt/seafile/seafile-server')
+    return '/opt/seafile/seafile-server'
 
 def get_script(script):
     return join(get_install_dir(), script)
-
 
 def get_conf(key, default=None):
     key = key.upper()
@@ -241,11 +240,7 @@ def cert_has_valid_days(cert, days):
     return retcode == 0
 
 def get_version_stamp_file():
-    return '/var/lib/seafile/seafile-data/current_version'
-
-def get_seafile_version():
-    """ Returns the latest installed version. """
-    return read_version_stamp('/opt/seafile/version')
+    return '/opt/seafile/seafile-data/current_version'
 
 def read_version_stamp(fn=get_version_stamp_file()):
     assert exists(fn), 'version stamp file {} does not exist!'.format(fn)
@@ -266,12 +261,12 @@ def wait_for_mysql():
     last_error = None
     while True:
         try:
-            MySQLdb.connect(host=db_host, port=3306, user=db_user, passwd=db_passwd)
+            pymysql.connect(host=db_host, port=3306, user=db_user, passwd=db_passwd)
             success = True
             break
         except Exception as e:
             last_error = e
-            print('waiting for mysql server to be ready: {}'.format(e))
+            eprint('waiting for mysql server to be ready: {}'.format(e))
         time.sleep(3)
         timeout -= 3
         if timeout <= 0:

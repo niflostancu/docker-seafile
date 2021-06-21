@@ -1,10 +1,7 @@
-# Utility libraries
-mysqlclient
-click
+# install packages required by seafile init / utility scripts:
+pymysql
 termcolor
 prettytable
 colorlog
-Jinja2
-jsonfield==2.0.2
-django-appconf==1.0.2
+django-webpack_loader==0.7.0
 
