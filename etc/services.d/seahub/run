@@ -30,9 +30,14 @@ export PYTHONPATH="${SEAHUB_DIR}:${SEAHUB_DIR}/thirdpart:$PYTHONPATH"
 
 # create pids dir if not existing
 s6-setuidgid seafile mkdir -p "/opt/seafile/pids"
-cd "${SEAFILE_SERVER_DIR}/seahub/"
+
+# check if admin account exists and create it (if requested)
+cd "${SEAFILE_INSTALL_DIR}/container-scripts"
+s6-envdir -fn /var/run/s6/container_environment \
+    s6-setuidgid seafile ./check_init_admin.py
 
 # make gunicorn run in foreground
+cd "${SEAFILE_SERVER_DIR}/seahub/"
 echo "Running Seahub in gunicorn mode..."
 sed -i 's/^daemon\s*=.*/daemon = False/' "${REAL_CONF_DIR}/gunicorn.conf.py"
 

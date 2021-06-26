@@ -16,8 +16,9 @@ import time
 from utils import (
     call, get_conf, get_install_dir, loginfo,
     get_script, get_seafile_version,
-    update_version_stamp, wait_for_mysql
+    update_version_stamp
 )
+
 
 seafile_version = get_seafile_version()
 installdir = get_install_dir()
@@ -52,8 +53,6 @@ def init_seafile_server():
 
     call('''sed -i -e '/def validate_mysql_host(self, host)/a \\ \\ \\ \\ \\ \\ \\ \\ return host' {}'''
         .format(get_script('setup-seafile-mysql.py')))
-
-    wait_for_mysql()
 
     # run the setup script
     call('{} auto -n seafile'.format(get_script('setup-seafile-mysql.sh')), env=env)

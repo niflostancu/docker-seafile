@@ -7,9 +7,12 @@ services:
     environment:
       SEAFILE_INIT_DEBUG: "1"
       SEAFILE_SERVER_NAME: "Test Seafile"
-      SEAFILE_SERVER_IP: '127.0.0.1'
-      SEAFILE_SERVER_URL: 'http://localhost:8000'
+      # example to run on non-root domain
+      SEAHUB_WEB_ROOT: '/seafile/'
+      SEAFILE_URL: 'http://localhost:8000/seafile/'
       SEAFHTTP_URL: 'http://localhost:8000/seafhttp'
+      SEAFILE_ADMIN_EMAIL: 'admin@example.com'
+      SEAFILE_ADMIN_PASSWORD: 'test123'
       DB_TYPE: mysql
       DB_HOST: mysql
       DB_PORT: "3306"
