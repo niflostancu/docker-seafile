@@ -1,5 +1,5 @@
 # Seafile server image
-FROM niflostancu/server-base:v0.4-alpine3.13
+FROM niflostancu/server-base:alpine-3.14
 MAINTAINER Florin Stancu <niflostancu@gmail.com>
 
 ENV SEAFILE_UID=1000 \
@@ -12,15 +12,6 @@ RUN apk --update --no-cache add \
     py3-dateutil py3-simplejson jansson libarchive libuuid librados \
     libevent glib mariadb-client mariadb-connector-c re2c flex oniguruma \
     nginx libxml2 libxslt su-exec shadow
-
-# ?? libpcre3-dev libz-dev 
-RUN apk add --virtual .build_dep \
-    curl-dev openssl-dev libevent-dev glib-dev util-linux-dev intltool \
-    sqlite-dev libarchive-dev libtool flex-dev jansson-dev vala fuse-dev \
-    cmake make musl-dev gcc g++ automake autoconf bsd-compat-headers \
-    python3-dev mariadb-dev py3-setuptools git \
-    mariadb-connector-c-dev libxml2-dev libxslt-dev libffi-dev oniguruma-dev \
-    patch
 
 # Copy build script and patches
 COPY requirements-utils.txt /tmp/

@@ -46,6 +46,15 @@ mkdir -p "$WORK_DIR"
 # used to install several seafile python packages
 PYTHON_PACKAGES_DIR=`python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
 
+# Install build dependencies
+apk add --virtual .build_dep \
+    curl-dev openssl-dev libevent-dev glib-dev util-linux-dev intltool \
+    sqlite-dev libarchive-dev libtool flex-dev jansson-dev vala fuse-dev \
+    cmake make musl-dev gcc g++ automake autoconf bsd-compat-headers \
+    python3-dev mariadb-dev py3-setuptools git \
+    mariadb-connector-c-dev libxml2-dev libxslt-dev libffi-dev oniguruma-dev \
+    patch
+
 # Install python requirements
 pip install -r /tmp/requirements-utils.txt
 
